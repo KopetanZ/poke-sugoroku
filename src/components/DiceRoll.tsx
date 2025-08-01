@@ -11,7 +11,8 @@ interface DiceRollProps {
 
 export function DiceRoll({ isRolling, finalValue, onRollComplete, size = 'medium' }: DiceRollProps) {
   const [displayValue, setDisplayValue] = useState(1);
-  const [animationPhase, setAnimationPhase] = useState<'idle' | 'rolling' | 'settling'>('idle');
+  const [animationPhase, setAnimationPhase] = useState<'idle' | 'rolling' | 'settling' | 'complete'>('idle');
+  const [showResult, setShowResult] = useState(false);
 
   const sizeClasses = {
     small: 'w-12 h-12 text-xs',
@@ -34,26 +35,34 @@ export function DiceRoll({ isRolling, finalValue, onRollComplete, size = 'medium
   useEffect(() => {
     if (isRolling && animationPhase === 'idle') {
       setAnimationPhase('rolling');
+      setShowResult(false);
       
-      // ランダムにサイコロの値を変化させる
+      // より滑らかに値を変化させる
       const rollInterval = setInterval(() => {
         setDisplayValue(Math.floor(Math.random() * 6) + 1);
-      }, 100);
+      }, 80);
 
-      // 1秒後に最終値に設定
+      // 1.5秒後に最終値に設定
       setTimeout(() => {
         clearInterval(rollInterval);
         if (finalValue) {
           setDisplayValue(finalValue);
           setAnimationPhase('settling');
           
-          // さらに0.5秒後に完了
+          // 0.5秒後に結果表示
           setTimeout(() => {
-            setAnimationPhase('idle');
+            setAnimationPhase('complete');
+            setShowResult(true);
             onRollComplete?.();
+            
+            // 2秒後にアイドル状態に戻る
+            setTimeout(() => {
+              setAnimationPhase('idle');
+              setShowResult(false);
+            }, 2000);
           }, 500);
         }
-      }, 1000);
+      }, 1500);
     }
   }, [isRolling, finalValue, animationPhase, onRollComplete]);
 
@@ -87,10 +96,10 @@ export function DiceRoll({ isRolling, finalValue, onRollComplete, size = 'medium
           ${sizeClasses[size]}
           bg-white border-2 border-gray-300 rounded-lg shadow-lg
           relative flex items-center justify-center
-          transition-transform duration-200
-          ${animationPhase === 'rolling' ? 'animate-bounce' : ''}
-          ${animationPhase === 'settling' ? 'animate-pulse' : ''}
-          ${isRolling ? 'rotate-animation' : ''}
+          transition-all duration-300
+          ${animationPhase === 'rolling' ? 'dice-rolling' : ''}
+          ${animationPhase === 'settling' ? 'dice-settling' : ''}
+          ${animationPhase === 'complete' ? 'dice-complete' : ''}
         `}
         style={{
           perspective: '1000px',
@@ -107,37 +116,84 @@ export function DiceRoll({ isRolling, finalValue, onRollComplete, size = 'medium
         
         {/* 転がり効果のオーバーレイ */}
         {animationPhase === 'rolling' && (
-          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white to-transparent opacity-30 animate-spin rounded-lg" />
+          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white to-transparent opacity-40 animate-spin rounded-lg" />
         )}
       </div>
       
-      {/* 値の表示（デバッグ用・本番では非表示にできます） */}
-      {finalValue && animationPhase !== 'idle' && (
-        <div className="mt-2 text-sm text-gray-600 font-semibold">
-          目標: {finalValue}
+      {/* 結果表示 */}
+      {showResult && (
+        <div className="mt-3 px-4 py-2 bg-yellow-400 text-yellow-900 rounded-full font-bold text-xl animate-bounce">
+          {displayValue}が出ました！
         </div>
       )}
       
       <style jsx>{`
-        .rotate-animation {
-          animation: diceRoll 1s ease-in-out;
+        .dice-rolling {
+          animation: continuousRoll 1.5s ease-in-out;
         }
         
-        @keyframes diceRoll {
+        .dice-settling {
+          animation: settleDown 0.5s ease-out;
+        }
+        
+        .dice-complete {
+          animation: celebrate 0.6s ease-out;
+        }
+        
+        @keyframes continuousRoll {
           0% {
-            transform: rotateX(0deg) rotateY(0deg) scale(1);
+            transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1);
           }
-          25% {
-            transform: rotateX(90deg) rotateY(45deg) scale(1.1);
+          10% {
+            transform: rotateX(45deg) rotateY(45deg) rotateZ(15deg) scale(1.05);
+          }
+          20% {
+            transform: rotateX(90deg) rotateY(90deg) rotateZ(30deg) scale(1.1);
+          }
+          30% {
+            transform: rotateX(135deg) rotateY(135deg) rotateZ(45deg) scale(1.15);
+          }
+          40% {
+            transform: rotateX(180deg) rotateY(180deg) rotateZ(60deg) scale(1.2);
           }
           50% {
-            transform: rotateX(180deg) rotateY(90deg) scale(1.2);
+            transform: rotateX(225deg) rotateY(225deg) rotateZ(75deg) scale(1.15);
           }
-          75% {
-            transform: rotateX(270deg) rotateY(135deg) scale(1.1);
+          60% {
+            transform: rotateX(270deg) rotateY(270deg) rotateZ(90deg) scale(1.1);
+          }
+          70% {
+            transform: rotateX(315deg) rotateY(315deg) rotateZ(105deg) scale(1.05);
+          }
+          80% {
+            transform: rotateX(360deg) rotateY(360deg) rotateZ(120deg) scale(1);
+          }
+          90% {
+            transform: rotateX(405deg) rotateY(405deg) rotateZ(135deg) scale(0.95);
           }
           100% {
-            transform: rotateX(360deg) rotateY(180deg) scale(1);
+            transform: rotateX(450deg) rotateY(450deg) rotateZ(150deg) scale(1);
+          }
+        }
+        
+        @keyframes settleDown {
+          0% {
+            transform: rotateX(450deg) rotateY(450deg) rotateZ(150deg) scale(1);
+          }
+          50% {
+            transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1.1);
+          }
+          100% {
+            transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1);
+          }
+        }
+        
+        @keyframes celebrate {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.2);
           }
         }
       `}</style>
