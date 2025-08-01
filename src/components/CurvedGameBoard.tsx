@@ -11,20 +11,24 @@ interface CurvedGameBoardProps {
 export function CurvedGameBoard({ gameState }: CurvedGameBoardProps) {
   // サーペンタイン（蛇行）パターンでマスの位置を計算
   const calculateCellPosition = (cellId: number, totalCells: number) => {
-    const boardWidth = 8; // 横8マス
-    const cellSize = 80; // マスのサイズ（px）
-    const padding = 20; // パディング
+    // 動的にボード幅を計算（総マス数に基づいて最適な幅を決定）
+    const boardWidth = Math.max(6, Math.min(10, Math.ceil(Math.sqrt(totalCells * 1.2))));
+    const cellSize = Math.max(60, Math.min(100, 800 / boardWidth)); // 画面サイズに応じてセルサイズ調整
+    const padding = Math.max(10, cellSize * 0.15);
     
     const row = Math.floor(cellId / boardWidth);
     const col = row % 2 === 0 ? cellId % boardWidth : boardWidth - 1 - (cellId % boardWidth);
     
-    // 曲線効果のためのオフセット
-    const curveOffset = Math.sin((cellId / totalCells) * Math.PI * 2) * 10;
+    // より滑らかな曲線効果
+    const progress = cellId / (totalCells - 1);
+    const curveOffset = Math.sin(progress * Math.PI * 3) * Math.min(30, cellSize * 0.3);
+    const verticalWave = Math.cos(progress * Math.PI * 2) * Math.min(20, cellSize * 0.2);
     
     return {
       x: col * (cellSize + padding) + padding + curveOffset,
-      y: row * (cellSize + padding) + padding,
-      rotation: (cellId * 5) % 360 // 微細な回転で動きを演出
+      y: row * (cellSize + padding) + padding + verticalWave,
+      rotation: (cellId * 3) % 360, // より滑らかな回転
+      size: cellSize
     };
   };
 
@@ -139,11 +143,13 @@ export function CurvedGameBoard({ gameState }: CurvedGameBoardProps) {
                 absolute border-3 rounded-2xl p-2 shadow-lg
                 ${getCellColor(cell)}
                 transition-all duration-300 hover:scale-110 hover:shadow-xl
-                min-w-[80px] min-h-[80px] flex flex-col items-center justify-center
+                flex flex-col items-center justify-center
               `}
               style={{
                 left: `${position.x}px`,
                 top: `${position.y}px`,
+                width: `${position.size}px`,
+                height: `${position.size}px`,
                 transform: `rotate(${position.rotation * 0.1}deg)`,
                 zIndex: 10
               }}
@@ -163,14 +169,13 @@ export function CurvedGameBoard({ gameState }: CurvedGameBoardProps) {
                 <div className="flex justify-center mb-1">
                   <div className="relative w-10 h-10 bg-white rounded-full p-1 shadow-md">
                     <Image
-                      src={cell.pokemon.sprites?.front_default || '/placeholder-pokemon.png'}
+                      src={PokeApiService.getPokemonImageUrl(cell.pokemon, 'sprite')}
                       alt={cell.pokemon.name}
                       width={32}
                       height={32}
                       className="pixelated rounded-full"
                       onError={(e) => {
-                        // フォールバック画像
-                        (e.target as HTMLImageElement).src = '/placeholder-pokemon.png';
+                        (e.target as HTMLImageElement).src = '/placeholder-pokemon.svg';
                       }}
                     />
                   </div>
@@ -197,13 +202,13 @@ export function CurvedGameBoard({ gameState }: CurvedGameBoardProps) {
                     >
                       {player.avatar && (
                         <Image
-                          src={player.avatar.sprites?.front_default || '/placeholder-pokemon.png'}
+                          src={PokeApiService.getPokemonImageUrl(player.avatar, 'sprite')}
                           alt={player.avatar.name}
                           width={20}
                           height={20}
                           className="rounded-full"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/placeholder-pokemon.png';
+                            (e.target as HTMLImageElement).src = '/placeholder-pokemon.svg';
                           }}
                         />
                       )}
