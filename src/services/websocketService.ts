@@ -7,7 +7,7 @@ export class WebSocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
-  private eventListeners: Map<string, Function[]> = new Map();
+  private eventListeners: Map<string, ((data: unknown) => void)[]> = new Map();
   private isConnecting = false;
 
   private constructor() {}
@@ -20,7 +20,7 @@ export class WebSocketService {
   }
 
   // イベントリスナーの追加
-  addEventListener(event: string, callback: Function): void {
+  addEventListener(event: string, callback: (data: unknown) => void): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, []);
     }
@@ -28,7 +28,7 @@ export class WebSocketService {
   }
 
   // イベントリスナーの削除
-  removeEventListener(event: string, callback: Function): void {
+  removeEventListener(event: string, callback: (data: unknown) => void): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       const index = listeners.indexOf(callback);
@@ -39,7 +39,7 @@ export class WebSocketService {
   }
 
   // イベントの発火
-  private emit(event: string, data: any): void {
+  private emit(event: string, data: unknown): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       listeners.forEach(callback => callback(data));

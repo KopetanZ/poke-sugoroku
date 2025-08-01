@@ -1,8 +1,8 @@
-import { GameState, Player, Cell, CellType } from '@/types/game';
+import { GameState, Player, Cell, CellType, GameSettings, DIFFICULTY_PRESETS, DifficultyLevel } from '@/types/game';
 import { PokeApiService } from './pokeapi';
 
 export class GameEngine {
-  static createDefaultBoard(size: number = 30): Cell[] {
+  static createDefaultBoard(size: number = 30, specialCellFrequency: number = 0.25): Cell[] {
     const board: Cell[] = [];
     
     // スタート
@@ -19,21 +19,21 @@ export class GameEngine {
       let warpTo: number | undefined;
       let message = '';
 
-      // 特殊マスをランダムに配置
+      // 特殊マスをランダムに配置（難易度に応じて頻度調整）
       const random = Math.random();
-      if (random < 0.1) {
+      if (random < specialCellFrequency * 0.4) {
         type = 'skip';
         value = Math.floor(Math.random() * 2) + 1; // 1-2回休み
         message = `${value}回休み！`;
-      } else if (random < 0.15) {
+      } else if (random < specialCellFrequency * 0.6) {
         type = 'advance';
         value = Math.floor(Math.random() * 3) + 2; // 2-4マス進む
         message = `${value}マス進む！`;
-      } else if (random < 0.2) {
+      } else if (random < specialCellFrequency * 0.8) {
         type = 'back';
         value = Math.floor(Math.random() * 3) + 1; // 1-3マス戻る
         message = `${value}マス戻る...`;
-      } else if (random < 0.23 && i > 5 && i < size - 5) {
+      } else if (random < specialCellFrequency && i > 5 && i < size - 5) {
         type = 'warp';
         warpTo = Math.floor(Math.random() * (size - 10)) + 5;
         message = `ワープ！${warpTo}番目のマスへ！`;
@@ -60,7 +60,24 @@ export class GameEngine {
     return board;
   }
 
-  static async createGame(playerNames: string[], boardSize: number = 30): Promise<GameState> {
+  static async createGame(playerNames: string[], settings?: Partial<GameSettings>): Promise<GameState> {
+    const defaultSettings: GameSettings = {
+      boardSize: 30,
+      maxPlayers: 4,
+      diceMin: 1,
+      diceMax: 6,
+      usePokemonAvatars: true,
+      playSound: true,
+      difficulty: 'normal',
+      specialCellFrequency: 0.25
+    };
+
+    const gameSettings = { ...defaultSettings, ...settings };
+    
+    // 難易度プリセットを適用
+    if (gameSettings.difficulty !== 'custom') {
+      Object.assign(gameSettings, DIFFICULTY_PRESETS[gameSettings.difficulty]);
+    }
     const players: Player[] = [];
     const colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500'];
     
@@ -78,7 +95,9 @@ export class GameEngine {
       });
     }
 
-    const board = await this.populateBoardWithPokemon(this.createDefaultBoard(boardSize));
+    const board = await this.populateBoardWithPokemon(
+      this.createDefaultBoard(gameSettings.boardSize, gameSettings.specialCellFrequency)
+    );
 
     return {
       id: `game-${Date.now()}`,
@@ -90,8 +109,8 @@ export class GameEngine {
     };
   }
 
-  static rollDice(): number {
-    return Math.floor(Math.random() * 6) + 1;
+  static rollDice(min: number = 1, max: number = 6): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
   static async makeMove(gameState: GameState, diceValue: number): Promise<GameState> {

@@ -52,7 +52,7 @@ export function MapEditor({ onSave, onCancel, initialBoard }: MapEditorProps) {
   const applyEdit = () => {
     if (editingCell === null) return;
 
-    let updates: Partial<Cell> = {
+    const updates: Partial<Cell> = {
       type: selectedCellType,
       message: selectedMessage || undefined,
     };

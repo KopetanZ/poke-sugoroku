@@ -5,8 +5,16 @@ import { GameState, Player, Cell } from '@/types/game';
 import { GameEngine } from '@/services/gameEngine';
 import { GameBoard } from './GameBoard';
 import { MapEditor } from './MapEditor';
+import { PokemonSelector } from './PokemonSelector';
+import { AchievementNotification } from './AchievementNotification';
+import { AchievementPanel } from './AchievementPanel';
+import { DifficultySelector } from './DifficultySelector';
 import { PokeApiService } from '@/services/pokeapi';
 import { SoundService } from '@/services/soundService';
+import { AchievementService } from '@/services/achievementService';
+import { Pokemon } from '@/types/pokemon';
+import { Achievement } from '@/types/achievements';
+import { GameSettings } from '@/types/game';
 import Image from 'next/image';
 
 export function SugorokuGame() {
@@ -18,14 +26,43 @@ export function SugorokuGame() {
   const [editMode, setEditMode] = useState(false);
   const [customBoard, setCustomBoard] = useState<Cell[] | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [showPokemonSelector, setShowPokemonSelector] = useState(false);
+  const [currentPlayerForAvatar, setCurrentPlayerForAvatar] = useState<number | null>(null);
+  const [playerAvatars, setPlayerAvatars] = useState<{ [key: number]: Pokemon }>({});
+  const [showAchievementPanel, setShowAchievementPanel] = useState(false);
+  const [achievementNotifications, setAchievementNotifications] = useState<Achievement[]>([]);
+  const [moveCount, setMoveCount] = useState(0);
+  const [showDifficultySelector, setShowDifficultySelector] = useState(false);
+  const [gameSettings, setGameSettings] = useState<Partial<GameSettings>>({
+    difficulty: 'normal',
+    diceMin: 1,
+    diceMax: 6,
+    boardSize: 30,
+    specialCellFrequency: 0.25
+  });
 
   const startNewGame = async () => {
     setGameSetup(false);
-    const newGame = await GameEngine.createGame(playerNames);
+    const newGame = await GameEngine.createGame(playerNames, gameSettings);
     if (customBoard) {
       newGame.board = customBoard;
     }
+    
+    // カスタムアバターを適用
+    newGame.players.forEach((player, index) => {
+      if (playerAvatars[index]) {
+        player.avatar = playerAvatars[index];
+      }
+    });
+    
     setGameState(newGame);
+    setMoveCount(0);
+    
+    // ゲーム開始時の実績チェック
+    const newAchievements = AchievementService.onGameStart();
+    if (newAchievements.length > 0) {
+      setAchievementNotifications(prev => [...prev, ...newAchievements]);
+    }
   };
 
   const openMapEditor = () => {
@@ -37,6 +74,12 @@ export function SugorokuGame() {
     setEditMode(false);
     // ローカルストレージに保存
     localStorage.setItem('customSugorokuBoard', JSON.stringify(board));
+    
+    // カスタムマップ作成実績
+    const newAchievements = AchievementService.onCustomMapCreated();
+    if (newAchievements.length > 0) {
+      setAchievementNotifications(prev => [...prev, ...newAchievements]);
+    }
   };
 
   const cancelMapEditor = () => {
@@ -65,6 +108,36 @@ export function SugorokuGame() {
       setIsMuted(muted);
       SoundService.setMute(muted);
     }
+
+    // 難易度設定を読み込み
+    const savedGameSettings = localStorage.getItem('sugorokuGameSettings');
+    if (savedGameSettings) {
+      try {
+        setGameSettings(JSON.parse(savedGameSettings));
+      } catch (error) {
+        console.error('Failed to load game settings:', error);
+      }
+    }
+
+    // プレイヤーアバターを読み込み
+    const savedAvatars = localStorage.getItem('playerAvatars');
+    if (savedAvatars) {
+      try {
+        setPlayerAvatars(JSON.parse(savedAvatars));
+      } catch (error) {
+        console.error('Failed to load player avatars:', error);
+      }
+    }
+
+    // 実績リスナーを設定
+    const handleAchievement = (achievement: Achievement) => {
+      setAchievementNotifications(prev => [...prev, achievement]);
+    };
+    AchievementService.addAchievementListener(handleAchievement);
+
+    return () => {
+      AchievementService.removeAchievementListener(handleAchievement);
+    };
   }, []);
 
   const toggleMute = () => {
@@ -74,10 +147,46 @@ export function SugorokuGame() {
     localStorage.setItem('sugorokuMuted', JSON.stringify(newMutedState));
   };
 
+  const openPokemonSelector = (playerIndex: number) => {
+    setCurrentPlayerForAvatar(playerIndex);
+    setShowPokemonSelector(true);
+  };
+
+  const handlePokemonSelect = (pokemon: Pokemon) => {
+    if (currentPlayerForAvatar !== null) {
+      setPlayerAvatars(prev => ({
+        ...prev,
+        [currentPlayerForAvatar]: pokemon
+      }));
+      // ローカルストレージに保存
+      const newAvatars = { ...playerAvatars, [currentPlayerForAvatar]: pokemon };
+      localStorage.setItem('playerAvatars', JSON.stringify(newAvatars));
+    }
+    setShowPokemonSelector(false);
+    setCurrentPlayerForAvatar(null);
+  };
+
+  const cancelPokemonSelect = () => {
+    setShowPokemonSelector(false);
+    setCurrentPlayerForAvatar(null);
+  };
+
+  const handleDifficultySelect = (settings: Partial<GameSettings>) => {
+    setGameSettings(settings);
+    setShowDifficultySelector(false);
+    // ローカルストレージに保存
+    localStorage.setItem('sugorokuGameSettings', JSON.stringify(settings));
+  };
+
+  const cancelDifficultySelect = () => {
+    setShowDifficultySelector(false);
+  };
+
   const rollDice = async () => {
     if (!gameState || isRolling || gameState.gameEnded) return;
 
     setIsRolling(true);
+    setMoveCount(prev => prev + 1);
     
     // サイコロ音を再生
     SoundService.playDiceRoll();
@@ -85,7 +194,7 @@ export function SugorokuGame() {
     // サイコロを振るアニメーション
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const diceValue = GameEngine.rollDice();
+    const diceValue = GameEngine.rollDice(gameSettings.diceMin || 1, gameSettings.diceMax || 6);
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     const oldPosition = currentPlayer.position;
     const newGameState = await GameEngine.makeMove(gameState, diceValue);
@@ -110,11 +219,25 @@ export function SugorokuGame() {
         break;
     }
 
-    // ポケモンの鳴き声を再生
+    // ポケモンの鳴き声を再生・実績チェック
     if (currentCell.pokemon) {
       setTimeout(() => {
         SoundService.playPokemonCry(currentCell.pokemon!);
       }, 500);
+      
+      // ポケモン出会い実績
+      const pokemonAchievements = AchievementService.onPokemonEncounter(currentCell.pokemon.id);
+      if (pokemonAchievements.length > 0) {
+        setAchievementNotifications(prev => [...prev, ...pokemonAchievements]);
+      }
+    }
+
+    // 特殊マス実績
+    if (currentCell.type !== 'normal' && currentCell.type !== 'start' && currentCell.type !== 'goal') {
+      const specialAchievements = AchievementService.onSpecialCellLanded(currentCell.type);
+      if (specialAchievements.length > 0) {
+        setAchievementNotifications(prev => [...prev, ...specialAchievements]);
+      }
     }
     
     // メッセージ表示と読み上げ
@@ -124,12 +247,20 @@ export function SugorokuGame() {
       setTimeout(() => setShowMessage(''), 3000);
     }
 
-    // ゲーム終了時の効果音
+    // ゲーム終了時の効果音・実績チェック
     if (newGameState.gameEnded && newGameState.winner) {
       setTimeout(() => {
         SoundService.playVictorySound();
         SoundService.speakText(`${newGameState.winner!.name}の勝ち！おめでとう！`);
       }, 1000);
+      
+      // ゲーム終了実績
+      const endAchievements = AchievementService.onGameEnd(newGameState, moveCount);
+      if (endAchievements.length > 0) {
+        setTimeout(() => {
+          setAchievementNotifications(prev => [...prev, ...endAchievements]);
+        }, 2000);
+      }
     }
     
     setIsRolling(false);
@@ -159,6 +290,27 @@ export function SugorokuGame() {
     setPlayerNames(newNames);
   };
 
+  if (showDifficultySelector) {
+    return (
+      <DifficultySelector
+        onSelect={handleDifficultySelect}
+        onCancel={cancelDifficultySelect}
+        currentSettings={gameSettings}
+      />
+    );
+  }
+
+  if (showPokemonSelector) {
+    return (
+      <PokemonSelector
+        onSelect={handlePokemonSelect}
+        onCancel={cancelPokemonSelect}
+        title={`${playerNames[currentPlayerForAvatar || 0]}のアバターを選んでね！`}
+        selectedPokemon={currentPlayerForAvatar !== null ? playerAvatars[currentPlayerForAvatar] : undefined}
+      />
+    );
+  }
+
   if (editMode) {
     return (
       <MapEditor
@@ -181,22 +333,51 @@ export function SugorokuGame() {
             <div>
               <h2 className="text-2xl font-semibold mb-4 text-gray-800">プレイヤー設定</h2>
               {playerNames.map((name, index) => (
-                <div key={index} className="flex items-center gap-4 mb-3">
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => updatePlayerName(index, e.target.value)}
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl text-lg focus:border-purple-500 focus:outline-none"
-                    placeholder={`プレイヤー${index + 1}の名前`}
-                  />
-                  {playerNames.length > 2 && (
+                <div key={index} className="space-y-3 mb-4 p-4 bg-gray-50 rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => updatePlayerName(index, e.target.value)}
+                      className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl text-lg focus:border-purple-500 focus:outline-none"
+                      placeholder={`プレイヤー${index + 1}の名前`}
+                    />
+                    {playerNames.length > 2 && (
+                      <button
+                        onClick={() => removePlayer(index)}
+                        className="px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors text-lg font-semibold"
+                      >
+                        削除
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
+                      {playerAvatars[index] ? (
+                        <Image
+                          src={PokeApiService.getPokemonImageUrl(playerAvatars[index])}
+                          alt={playerAvatars[index].name}
+                          width={48}
+                          height={48}
+                          className="rounded-full bg-white p-1 border-2 border-gray-300"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
+                          👤
+                        </div>
+                      )}
+                      <span className="text-sm text-gray-600">
+                        {playerAvatars[index] ? playerAvatars[index].name : 'アバター未設定'}
+                      </span>
+                    </div>
                     <button
-                      onClick={() => removePlayer(index)}
-                      className="px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors text-lg font-semibold"
+                      onClick={() => openPokemonSelector(index)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-semibold"
                     >
-                      削除
+                      {playerAvatars[index] ? '変更' : '選択'}
                     </button>
-                  )}
+                  </div>
                 </div>
               ))}
               
@@ -211,6 +392,26 @@ export function SugorokuGame() {
             </div>
 
             <div className="space-y-4">
+              <button
+                onClick={() => setShowDifficultySelector(true)}
+                className="w-full py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 text-xl font-bold shadow-lg"
+              >
+                🎯 難易度設定
+              </button>
+              
+              <div className="text-center bg-gray-100 rounded-xl p-4">
+                <div className="text-sm text-gray-600 mb-2">現在の設定:</div>
+                <div className="space-y-1 text-sm">
+                  <div>難易度: <span className="font-semibold">{
+                    gameSettings.difficulty === 'easy' ? 'かんたん' :
+                    gameSettings.difficulty === 'normal' ? 'ふつう' :
+                    gameSettings.difficulty === 'hard' ? 'むずかしい' : 'カスタム'
+                  }</span></div>
+                  <div>サイコロ: <span className="font-semibold">{gameSettings.diceMin}-{gameSettings.diceMax}</span></div>
+                  <div>コース: <span className="font-semibold">{gameSettings.boardSize}マス</span></div>
+                </div>
+              </div>
+              
               <button
                 onClick={openMapEditor}
                 className="w-full py-4 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-xl hover:from-green-600 hover:to-teal-600 transition-all transform hover:scale-105 text-xl font-bold shadow-lg"
@@ -256,6 +457,12 @@ export function SugorokuGame() {
             🎲 ポケモンすごろく
           </h1>
           <div className="flex gap-2">
+            <button
+              onClick={() => setShowAchievementPanel(true)}
+              className="px-4 py-2 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors font-semibold"
+            >
+              🏆
+            </button>
             <button
               onClick={toggleMute}
               className={`px-4 py-2 rounded-xl transition-colors font-semibold ${
@@ -405,6 +612,24 @@ export function SugorokuGame() {
             {showMessage}
           </div>
         )}
+
+        {/* 実績パネル */}
+        {showAchievementPanel && (
+          <AchievementPanel onClose={() => setShowAchievementPanel(false)} />
+        )}
+
+        {/* 実績通知 */}
+        {achievementNotifications.map((achievement, index) => (
+          <AchievementNotification
+            key={`${achievement.id}-${index}`}
+            achievement={achievement}
+            onClose={() => {
+              setAchievementNotifications(prev => 
+                prev.filter((_, i) => i !== index)
+              );
+            }}
+          />
+        ))}
       </div>
     </div>
   );

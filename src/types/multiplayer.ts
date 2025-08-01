@@ -1,4 +1,4 @@
-import { GameState, Player, Cell } from './game';
+import { GameState, Player } from './game';
 
 export interface Room {
   id: string;
@@ -31,7 +31,7 @@ export type MultiplayerEventType =
 
 export interface MultiplayerEvent {
   type: MultiplayerEventType;
-  data: any;
+  data: unknown;
   timestamp: Date;
   playerId?: string;
   roomId?: string;

@@ -30,11 +30,11 @@ export function MultiplayerLobby({ onJoinGame, onBackToMenu }: MultiplayerLobbyP
     // イベントリスナー設定
     const handleConnected = () => setIsConnected(true);
     const handleDisconnected = () => setIsConnected(false);
-    const handleRoomUpdate = (room: Room) => {
-      setCurrentRoom(room);
+    const handleRoomUpdate = (data: unknown) => {
+      setCurrentRoom(data as Room);
     };
-    const handleChatMessage = (message: ChatMessage) => {
-      setChatMessages(prev => [...prev, message]);
+    const handleChatMessage = (data: unknown) => {
+      setChatMessages(prev => [...prev, data as ChatMessage]);
     };
 
     websocketService.addEventListener('connected', handleConnected);
