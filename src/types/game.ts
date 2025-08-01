@@ -6,14 +6,24 @@ export type CellType =
   | 'advance' // 〇進む
   | 'back' // 〇戻る
   | 'warp' // ワープ
+  | 'floating_island' // 浮島エリア
+  | 'island_exit' // 浮島脱出
   | 'start'
   | 'goal';
+
+export interface Position {
+  x: number;
+  y: number;
+}
 
 export interface Cell {
   id: number;
   type: CellType;
   value?: number; // skip turns, advance/back steps
   warpTo?: number; // warp destination cell id
+  position?: Position; // 自由配置用の座標
+  isFloatingIsland?: boolean; // 浮島エリアかどうか
+  returnTo?: number; // 浮島脱出時の戻り先
   pokemon?: Pokemon;
   message?: string; // 子供向けメッセージ
 }

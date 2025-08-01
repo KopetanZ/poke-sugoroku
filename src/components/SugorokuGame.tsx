@@ -5,8 +5,10 @@ import { GameState, Player, Cell } from '@/types/game';
 import { GameEngine } from '@/services/gameEngine';
 import { GameBoard } from './GameBoard';
 import { CurvedGameBoard } from './CurvedGameBoard';
+import { FreeFormGameBoard } from './FreeFormGameBoard';
 import { MapEditor } from './MapEditor';
 import { ImprovedMapEditor } from './ImprovedMapEditor';
+import { FreeFormMapEditor } from './FreeFormMapEditor';
 import { PokemonSelector } from './PokemonSelector';
 import { AchievementNotification } from './AchievementNotification';
 import { AchievementPanel } from './AchievementPanel';
@@ -45,6 +47,7 @@ export function SugorokuGame() {
   });
   const [useCurvedBoard] = useState(true);
   const [useImprovedEditor] = useState(true);
+  const [useFreeFormEditor, setUseFreeFormEditor] = useState(false);
   const [diceRollState, setDiceRollState] = useState({
     isRolling: false,
     finalValue: undefined as number | undefined
@@ -327,6 +330,16 @@ export function SugorokuGame() {
   }
 
   if (editMode) {
+    if (useFreeFormEditor) {
+      return (
+        <FreeFormMapEditor
+          onSave={saveCustomBoard}
+          onCancel={cancelMapEditor}
+          initialBoard={customBoard || undefined}
+        />
+      );
+    }
+    
     return useImprovedEditor ? (
       <ImprovedMapEditor
         onSave={saveCustomBoard}
@@ -437,12 +450,32 @@ export function SugorokuGame() {
                 </div>
               </div>
               
-              <button
-                onClick={openMapEditor}
-                className="w-full py-4 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-xl hover:from-green-600 hover:to-teal-600 transition-all transform hover:scale-105 text-xl font-bold shadow-lg"
-              >
-                🎨 マップを編集する
-              </button>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      setUseFreeFormEditor(false);
+                      openMapEditor();
+                    }}
+                    className="py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-xl hover:from-green-600 hover:to-teal-600 transition-all transform hover:scale-105 font-bold shadow-lg"
+                  >
+                    🎯 通常エディター
+                  </button>
+                  <button
+                    onClick={() => {
+                      setUseFreeFormEditor(true);
+                      openMapEditor();
+                    }}
+                    className="py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 font-bold shadow-lg"
+                  >
+                    🎨 自由配置
+                  </button>
+                </div>
+                <div className="text-center text-sm text-gray-600">
+                  <div>🎯 通常: グリッド配置</div>
+                  <div>🎨 自由配置: ドラッグ&ドロップ + 浮島機能</div>
+                </div>
+              </div>
               
               {customBoard && (
                 <div className="text-center text-green-600 font-semibold">
@@ -516,7 +549,9 @@ export function SugorokuGame() {
 
       {/* ゲーム盤面 */}
       <div className="bg-white rounded-2xl shadow-lg p-4 mb-4">
-        {useCurvedBoard ? (
+        {customBoard && customBoard.some(cell => cell.position) ? (
+          <FreeFormGameBoard gameState={gameState} />
+        ) : useCurvedBoard ? (
           <CurvedGameBoard gameState={gameState} />
         ) : (
           <GameBoard gameState={gameState} />

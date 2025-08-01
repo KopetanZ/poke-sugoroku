@@ -181,6 +181,16 @@ export class GameEngine {
           newPosition = cell.warpTo;
         }
         break;
+      case 'floating_island':
+        // 浮島エリアに入った - 特別な処理は特になし
+        // プレイヤーは浮島エリア内を移動可能
+        break;
+      case 'island_exit':
+        // 浮島脱出 - 指定された戻り先へ
+        if (cell.returnTo !== undefined) {
+          newPosition = cell.returnTo;
+        }
+        break;
     }
 
     return newPosition;
