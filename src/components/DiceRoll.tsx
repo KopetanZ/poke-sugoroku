@@ -29,8 +29,8 @@ export function DiceRoll({ isRolling, finalValue, onRollComplete, size = 'medium
   // 最終値に応じた針の最終位置を計算
   const getFinalNeedleAngle = (value: number) => {
     const baseAngle = getNumberAngle(value);
-    // 数字の中央を指すように調整（-30度オフセット）
-    return baseAngle - 30;
+    // 数字の中央を指すように調整（針が上向きなので90度オフセット）
+    return baseAngle + 90;
   };
 
   useEffect(() => {
@@ -100,8 +100,8 @@ export function DiceRoll({ isRolling, finalValue, onRollComplete, size = 'medium
                 <div
                   className="absolute text-white font-bold text-center"
                   style={{
-                    top: `${50 + 30 * Math.sin(angle * Math.PI / 180)}%`,
-                    left: `${50 + 30 * Math.cos(angle * Math.PI / 180)}%`,
+                    top: `${50 - 30 * Math.cos(angle * Math.PI / 180)}%`,
+                    left: `${50 + 30 * Math.sin(angle * Math.PI / 180)}%`,
                     transform: 'translate(-50%, -50%)',
                     fontSize: size === 'small' ? '12px' : size === 'medium' ? '16px' : '24px'
                   }}
@@ -136,8 +136,14 @@ export function DiceRoll({ isRolling, finalValue, onRollComplete, size = 'medium
       
       {/* 回転状態表示 */}
       {animationPhase === 'spinning' && (
-        <div className="text-lg font-semibold text-purple-600 animate-pulse">
+        <div className="text-lg font-semibold text-purple-600">
           🎯 回転中...
+        </div>
+      )}
+      
+      {animationPhase === 'settling' && (
+        <div className="text-lg font-semibold text-orange-600">
+          ⏳ 停止中...
         </div>
       )}
       
