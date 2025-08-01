@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Cell, CellType, Position } from '@/types/game';
 import { PokeApiService } from '@/services/pokeapi';
+import { Pokemon } from '@/types/pokemon';
 import Image from 'next/image';
 
 interface FreeFormMapEditorProps {
@@ -34,6 +35,8 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
   const [nextCellId, setNextCellId] = useState(() => Math.max(...cells.map(c => c.id)) + 1);
   const [isFloatingIslandMode, setIsFloatingIslandMode] = useState(false);
+  const [availablePokemon, setAvailablePokemon] = useState<Pokemon[]>([]);
+  const [showPokemonSelector, setShowPokemonSelector] = useState(false);
   
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -175,6 +178,42 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
     }
   };
 
+  // ポケモンデータを読み込み
+  useEffect(() => {
+    const loadPokemon = async () => {
+      try {
+        const pokemon = await PokeApiService.getMultiplePokemon(30);
+        setAvailablePokemon(pokemon);
+      } catch (error) {
+        console.error('Failed to load Pokemon:', error);
+      }
+    };
+    
+    loadPokemon();
+  }, []);
+
+  const assignPokemonToCell = (cellId: number, pokemon: Pokemon) => {
+    setCells(prev => prev.map(cell => 
+      cell.id === cellId 
+        ? { ...cell, pokemon }
+        : cell
+    ));
+    if (selectedCell?.id === cellId) {
+      setSelectedCell(prev => prev ? { ...prev, pokemon } : null);
+    }
+  };
+
+  const removePokemonFromCell = (cellId: number) => {
+    setCells(prev => prev.map(cell => 
+      cell.id === cellId 
+        ? { ...cell, pokemon: undefined }
+        : cell
+    ));
+    if (selectedCell?.id === cellId) {
+      setSelectedCell(prev => prev ? { ...prev, pokemon: undefined } : null);
+    }
+  };
+
   const handleSave = () => {
     // スタートとゴールの存在確認
     const hasStart = cells.some(cell => cell.type === 'start');
@@ -189,7 +228,60 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-4">
+    <>
+      {/* ポケモンセレクターモーダル */}
+      {showPokemonSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-4xl max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-2xl font-bold text-gray-800">🎮 ポケモンを選択</h3>
+              <button
+                onClick={() => setShowPokemonSelector(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            {availablePokemon.length > 0 ? (
+              <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                {availablePokemon.map((pokemon) => (
+                  <div
+                    key={pokemon.id}
+                    className="flex flex-col items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all"
+                    onClick={() => {
+                      if (selectedCell) {
+                        assignPokemonToCell(selectedCell.id, pokemon);
+                      }
+                      setShowPokemonSelector(false);
+                    }}
+                  >
+                    <Image
+                      src={PokeApiService.getPokemonImageUrl(pokemon, 'sprite')}
+                      alt={pokemon.name}
+                      width={48}
+                      height={48}
+                      className="mb-2"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder-pokemon.svg';
+                      }}
+                    />
+                    <div className="text-xs text-center font-medium text-gray-700">
+                      {pokemon.name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                ポケモンを読み込み中...
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden">
         {/* ヘッダー */}
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4">
@@ -311,6 +403,43 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
                       </div>
                     )}
                     
+                    {/* ポケモン設定 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        🎮 ポケモン配置
+                      </label>
+                      {selectedCell.pokemon ? (
+                        <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                          <Image
+                            src={PokeApiService.getPokemonImageUrl(selectedCell.pokemon, 'sprite')}
+                            alt={selectedCell.pokemon.name}
+                            width={40}
+                            height={40}
+                            className="rounded-full bg-white p-1"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/placeholder-pokemon.svg';
+                            }}
+                          />
+                          <div className="flex-1">
+                            <div className="font-semibold text-blue-800">{selectedCell.pokemon.name}</div>
+                            <button
+                              onClick={() => removePokemonFromCell(selectedCell.id)}
+                              className="text-xs text-red-600 hover:text-red-800"
+                            >
+                              削除
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setShowPokemonSelector(true)}
+                          className="w-full py-2 px-4 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
+                        >
+                          + ポケモンを選択
+                        </button>
+                      )}
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         メッセージ
@@ -413,6 +542,24 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
                     <div className="text-lg leading-none">{getCellIcon(cell)}</div>
                     <div className="text-[8px] leading-none mt-1">{cell.id}</div>
                     
+                    {/* ポケモン画像 */}
+                    {cell.pokemon && (
+                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
+                        <div className="relative w-6 h-6 bg-white rounded-full p-0.5 shadow-md">
+                          <Image
+                            src={PokeApiService.getPokemonImageUrl(cell.pokemon, 'sprite')}
+                            alt={cell.pokemon.name}
+                            width={20}
+                            height={20}
+                            className="pixelated rounded-full"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/placeholder-pokemon.svg';
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* 特殊設定の表示 */}
                     {cell.value && (
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full text-[8px] text-black flex items-center justify-center">
@@ -473,5 +620,6 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
         </div>
       </div>
     </div>
+    </>
   );
 }
