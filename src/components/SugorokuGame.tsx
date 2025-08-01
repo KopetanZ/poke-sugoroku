@@ -342,63 +342,72 @@ export function SugorokuGame() {
 
   if (gameSetup) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-4">
-        <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl p-8">
-          <h1 className="text-4xl font-bold text-center mb-8 text-purple-800">
+      <div className="min-h-screen bg-gradient-to-br from-cyan-300 via-blue-400 to-purple-500 p-6">
+        <div className="max-w-3xl mx-auto bg-gradient-to-br from-yellow-100 to-orange-100 rounded-3xl shadow-2xl p-10 border-8 border-white">
+          <h1 className="text-6xl font-black text-center mb-10 text-purple-800 drop-shadow-lg">
             🎲 ポケモンすごろく 🎲
           </h1>
+          <div className="text-center mb-8">
+            <p className="text-2xl font-bold text-orange-700">みんなで たのしく あそぼう！</p>
+          </div>
           
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div>
-              <h2 className="text-2xl font-semibold mb-4 text-gray-800">プレイヤー設定</h2>
+              <h2 className="text-3xl font-black mb-6 text-center bg-gradient-to-r from-green-500 to-blue-500 text-white py-4 rounded-2xl">👥 だれが あそぶ？</h2>
               {playerNames.map((name, index) => (
-                <div key={index} className="space-y-3 mb-4 p-4 bg-gray-50 rounded-xl">
+                <div key={index} className="space-y-4 mb-6 p-6 bg-white rounded-2xl shadow-xl border-4 border-blue-300">
                   <div className="flex items-center gap-4">
+                    <div className="text-2xl font-black text-blue-600 bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center">
+                      {index + 1}
+                    </div>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => updatePlayerName(index, e.target.value)}
-                      className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl text-lg focus:border-purple-500 focus:outline-none"
-                      placeholder={`プレイヤー${index + 1}の名前`}
+                      className="flex-1 px-6 py-4 border-4 border-purple-300 rounded-2xl text-2xl font-bold focus:border-yellow-400 focus:outline-none bg-gradient-to-r from-purple-100 to-pink-100"
+                      placeholder={`${index + 1}ばんめの ひとの なまえ`}
                     />
                     {playerNames.length > 2 && (
                       <button
                         onClick={() => removePlayer(index)}
-                        className="px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors text-lg font-semibold"
+                        className="px-6 py-4 bg-gradient-to-r from-red-400 to-red-600 text-white rounded-2xl hover:from-red-500 hover:to-red-700 transition-all font-black text-lg shadow-xl transform hover:scale-105"
                       >
-                        削除
+                        🗑️ けす
                       </button>
                     )}
                   </div>
                   
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-6 bg-gradient-to-r from-blue-100 to-purple-100 p-4 rounded-2xl">
+                    <div className="flex items-center gap-4">
                       {playerAvatars[index] ? (
                         <Image
                           src={PokeApiService.getPokemonImageUrl(playerAvatars[index])}
                           alt={playerAvatars[index].name}
-                          width={48}
-                          height={48}
-                          className="rounded-full bg-white p-1 border-2 border-gray-300"
+                          width={80}
+                          height={80}
+                          className="rounded-full bg-white p-2 border-4 border-yellow-400 shadow-xl"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = '/placeholder-pokemon.svg';
                           }}
                         />
                       ) : (
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
+                        <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-3xl border-4 border-gray-300">
                           👤
                         </div>
                       )}
-                      <span className="text-sm text-gray-600">
-                        {playerAvatars[index] ? playerAvatars[index].name : 'アバター未設定'}
-                      </span>
+                      <div>
+                        <div className="text-lg font-bold text-blue-700">
+                          {playerAvatars[index] ? playerAvatars[index].name : 'ポケモンを えらんでね！'}
+                        </div>
+                        <div className="text-sm text-blue-600">あなたの ポケモン</div>
+                      </div>
                     </div>
                     <button
                       onClick={() => openPokemonSelector(index)}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-semibold"
+                      className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-2xl hover:from-yellow-500 hover:to-orange-600 transition-all font-black text-lg shadow-xl transform hover:scale-105"
                     >
-                      {playerAvatars[index] ? '変更' : '選択'}
+                      {playerAvatars[index] ? '🔄 かえる' : '🎮 えらぶ'}
                     </button>
                   </div>
                 </div>
@@ -407,52 +416,54 @@ export function SugorokuGame() {
               {playerNames.length < 4 && (
                 <button
                   onClick={addPlayer}
-                  className="w-full py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors text-lg font-semibold"
+                  className="w-full py-4 bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-2xl hover:from-green-500 hover:to-blue-600 transition-all text-2xl font-black shadow-xl transform hover:scale-105"
                 >
-                  + プレイヤーを追加
+                  ➕ もっと なかまを ふやす
                 </button>
               )}
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <button
                 onClick={() => setShowDifficultySelector(true)}
-                className="w-full py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 text-xl font-bold shadow-lg"
+                className="w-full py-6 bg-gradient-to-r from-orange-400 to-red-500 text-white rounded-2xl hover:from-orange-500 hover:to-red-600 transition-all transform hover:scale-105 text-2xl font-black shadow-xl"
               >
-                🎯 難易度設定
+                🎯 むずかしさを きめよう
               </button>
               
-              <div className="text-center bg-gray-100 rounded-xl p-4">
-                <div className="text-sm text-gray-600 mb-2">現在の設定:</div>
-                <div className="space-y-1 text-sm">
-                  <div>難易度: <span className="font-semibold">{
-                    gameSettings.difficulty === 'easy' ? 'かんたん' :
-                    gameSettings.difficulty === 'normal' ? 'ふつう' :
-                    gameSettings.difficulty === 'hard' ? 'むずかしい' : 'カスタム'
+              <div className="text-center bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-6 border-4 border-purple-300">
+                <div className="text-xl font-bold text-purple-700 mb-4">いまの せってい:</div>
+                <div className="space-y-2 text-lg font-bold">
+                  <div className="bg-white rounded-xl p-2">むずかしさ: <span className="text-purple-600">{
+                    gameSettings.difficulty === 'easy' ? '🟢 かんたん' :
+                    gameSettings.difficulty === 'normal' ? '🔵 ふつう' :
+                    gameSettings.difficulty === 'hard' ? '🔴 むずかしい' : '⭐ とくべつ'
                   }</span></div>
-                  <div>サイコロ: <span className="font-semibold">{gameSettings.diceMin}-{gameSettings.diceMax}</span></div>
-                  <div>コース: <span className="font-semibold">{gameSettings.boardSize}マス</span></div>
+                  <div className="bg-white rounded-xl p-2">サイコロ: <span className="text-blue-600">{gameSettings.diceMin}～{gameSettings.diceMax}</span></div>
+                  <div className="bg-white rounded-xl p-2">コース: <span className="text-green-600">{gameSettings.boardSize}マス</span></div>
                 </div>
               </div>
               
               <button
                 onClick={openMapEditor}
-                className="w-full py-4 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-xl hover:from-green-600 hover:to-teal-600 transition-all transform hover:scale-105 text-xl font-bold shadow-lg"
+                className="w-full py-6 bg-gradient-to-r from-green-400 to-teal-500 text-white rounded-2xl hover:from-green-500 hover:to-teal-600 transition-all transform hover:scale-105 text-2xl font-black shadow-xl"
               >
-                🎨 マップエディター
+                🎨 じぶんだけの すごろくを つくろう
               </button>
               
               {customBoard && (
-                <div className="text-center text-green-600 font-semibold">
-                  ✅ カスタムマップが設定されています
+                <div className="text-center bg-green-100 rounded-2xl p-4 border-4 border-green-400">
+                  <div className="text-2xl font-black text-green-700">
+                    ✅ あなただけの すごろくが できたよ！
+                  </div>
                 </div>
               )}
               
               <button
                 onClick={startNewGame}
-                className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 text-xl font-bold shadow-lg"
+                className="w-full py-8 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-white rounded-3xl hover:from-purple-500 hover:via-pink-600 hover:to-red-600 transition-all transform hover:scale-110 text-4xl font-black shadow-2xl border-4 border-white animate-pulse"
               >
-                ゲームスタート！ 🚀
+                🚀 すごろく スタート！ 🚀
               </button>
             </div>
           </div>
@@ -463,8 +474,8 @@ export function SugorokuGame() {
 
   if (!gameState) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 flex items-center justify-center">
-        <div className="text-white text-2xl">ゲームを準備中...</div>
+      <div className="min-h-screen bg-gradient-to-br from-cyan-300 via-blue-400 to-purple-500 flex items-center justify-center">
+        <div className="text-white text-4xl font-black animate-bounce">🎲 すごろくの じゅんびちゅう... 🎲</div>
       </div>
     );
   }
@@ -498,15 +509,15 @@ export function SugorokuGame() {
             </button>
             <button
               onClick={openMapEditor}
-              className="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors font-semibold"
+              className="px-6 py-3 bg-gradient-to-r from-green-400 to-green-600 text-white rounded-2xl hover:from-green-500 hover:to-green-700 transition-all font-bold text-lg shadow-xl transform hover:scale-105"
             >
-              マップ編集
+              🎨 すごろくをつくる
             </button>
             <button
               onClick={resetGame}
-              className="px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition-colors font-semibold"
+              className="px-6 py-3 bg-gradient-to-r from-blue-400 to-blue-600 text-white rounded-2xl hover:from-blue-500 hover:to-blue-700 transition-all font-bold text-lg shadow-xl transform hover:scale-105"
             >
-              新しいゲーム
+              🆕 あたらしいゲーム
             </button>
           </div>
         </div>
@@ -527,28 +538,35 @@ export function SugorokuGame() {
       <div className="bg-white rounded-2xl shadow-lg p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* 現在のプレイヤー */}
-          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl p-4 text-white">
-            <h3 className="text-xl font-bold mb-2">現在のプレイヤー</h3>
-            <div className="flex items-center gap-4">
+          <div className="bg-gradient-to-br from-yellow-300 via-orange-400 to-pink-500 rounded-2xl p-6 text-white shadow-2xl border-4 border-white">
+            <h3 className="text-2xl font-black mb-4 text-center">🎯 いまのプレイヤー</h3>
+            <div className="flex items-center gap-6">
               {currentPlayer.avatar && (
-                <Image
-                  src={PokeApiService.getPokemonImageUrl(currentPlayer.avatar)}
-                  alt={currentPlayer.avatar.name}
-                  width={60}
-                  height={60}
-                  className="rounded-full bg-white p-1"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/placeholder-pokemon.svg';
-                  }}
-                />
+                <div className="relative">
+                  <Image
+                    src={PokeApiService.getPokemonImageUrl(currentPlayer.avatar)}
+                    alt={currentPlayer.avatar.name}
+                    width={80}
+                    height={80}
+                    className="rounded-full bg-white p-2 shadow-xl ring-4 ring-yellow-300"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder-pokemon.svg';
+                    }}
+                  />
+                  <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full px-2 py-1 text-xs font-bold">
+                    {currentPlayer.avatar.name}
+                  </div>
+                </div>
               )}
-              <div>
-                <div className="text-2xl font-bold">{currentPlayer.name}</div>
-                <div className="text-lg">位置: {currentPlayer.position + 1}</div>
+              <div className="flex-1">
+                <div className="text-3xl font-black mb-2 drop-shadow-lg">{currentPlayer.name}</div>
+                <div className="text-xl font-bold bg-white bg-opacity-20 rounded-xl px-3 py-1 mb-2">
+                  📍 {currentPlayer.position + 1}ばんめ
+                </div>
                 {currentPlayer.skipTurns > 0 && (
-                  <div className="text-lg text-red-200">
-                    {currentPlayer.skipTurns}回休み
+                  <div className="text-lg font-bold bg-red-500 bg-opacity-80 rounded-xl px-3 py-1 animate-pulse">
+                    😴 あと{currentPlayer.skipTurns}かいおやすみ
                   </div>
                 )}
               </div>
@@ -568,52 +586,59 @@ export function SugorokuGame() {
               onClick={rollDice}
               disabled={isRolling || gameState.gameEnded}
               className={`
-                w-full py-4 rounded-xl text-xl font-bold transition-all transform hover:scale-105 shadow-lg
+                w-full py-6 rounded-2xl text-2xl font-black transition-all transform shadow-2xl border-4
                 ${isRolling || gameState.gameEnded
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white'
+                  ? 'bg-gray-300 border-gray-400 cursor-not-allowed text-gray-600'
+                  : 'bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 hover:from-green-500 hover:via-blue-600 hover:to-purple-700 text-white border-white hover:scale-110 hover:rotate-2 animate-pulse'
                 }
               `}
             >
-{isRolling ? 'ルーレット回転中...' : 'ルーレットを回す！'}
+              {isRolling ? '🎲 サイコロがまわってるよ...' : '🎲 サイコロをふろう！'}
             </button>
           </div>
         </div>
 
         {/* プレイヤー一覧 */}
-        <div className="mt-6">
-          <h3 className="text-xl font-bold mb-4 text-gray-800">プレイヤー一覧</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mt-8">
+          <h3 className="text-2xl font-black mb-6 text-center bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-2xl">👥 みんなのようす</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {gameState.players.map((player) => (
               <div
                 key={player.id}
                 className={`
-                  p-4 rounded-xl border-2 transition-all
+                  p-5 rounded-2xl border-4 transition-all shadow-xl
                   ${player.id === currentPlayer.id 
-                    ? 'border-yellow-400 bg-yellow-50 transform scale-105' 
-                    : 'border-gray-300 bg-gray-50'
+                    ? 'border-yellow-400 bg-gradient-to-br from-yellow-100 to-orange-100 transform scale-110 shadow-2xl animate-pulse' 
+                    : 'border-blue-300 bg-gradient-to-br from-blue-50 to-purple-50 hover:scale-105'
                   }
                 `}
               >
                 <div className="text-center">
                   {player.avatar && (
-                    <Image
-                      src={PokeApiService.getPokemonImageUrl(player.avatar, 'sprite')}
-                      alt={player.avatar.name}
-                      width={40}
-                      height={40}
-                      className="mx-auto mb-2"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = '/placeholder-pokemon.svg';
-                      }}
-                    />
+                    <div className="relative mb-3">
+                      <Image
+                        src={PokeApiService.getPokemonImageUrl(player.avatar, 'sprite')}
+                        alt={player.avatar.name}
+                        width={60}
+                        height={60}
+                        className="mx-auto rounded-full bg-white p-1 shadow-lg"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/placeholder-pokemon.svg';
+                        }}
+                      />
+                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-purple-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">
+                        {player.avatar.name}
+                      </div>
+                    </div>
                   )}
-                  <div className="font-semibold text-gray-800">{player.name}</div>
-                  <div className="text-sm text-gray-600">位置: {player.position + 1}</div>
+                  <div className="font-black text-lg text-gray-800 mb-2">{player.name}</div>
+                  <div className="text-base font-bold bg-white bg-opacity-60 rounded-lg px-2 py-1 text-blue-700">
+                    📍 {player.position + 1}ばんめ
+                  </div>
                   {player.skipTurns > 0 && (
-                    <div className="text-xs text-red-600">
-                      {player.skipTurns}回休み
+                    <div className="text-sm font-bold text-red-600 bg-red-100 rounded-lg px-2 py-1 mt-2 animate-bounce">
+                      😴 あと{player.skipTurns}かい おやすみ
                     </div>
                   )}
                 </div>
@@ -624,17 +649,17 @@ export function SugorokuGame() {
 
         {/* ゲーム終了時の表示 */}
         {gameState.gameEnded && gameState.winner && (
-          <div className="mt-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl p-6 text-center">
-            <div className="text-4xl mb-4">🎉 ゲーム終了！ 🎉</div>
-            <div className="text-2xl font-bold text-white mb-4">
-              勝者: {gameState.winner.name}
+          <div className="mt-8 bg-gradient-to-br from-yellow-300 via-orange-400 to-pink-500 rounded-3xl p-8 text-center border-8 border-white shadow-2xl">
+            <div className="text-6xl mb-6 animate-bounce">🎉 おつかれさま！ 🎉</div>
+            <div className="text-4xl font-black text-white mb-6 drop-shadow-lg">
+              🏆 かったのは {gameState.winner.name} だよ！
             </div>
             {gameState.winner.avatar && (
               <Image
                 src={PokeApiService.getPokemonImageUrl(gameState.winner.avatar)}
                 alt={gameState.winner.avatar.name}
-                width={100}
-                height={100}
+                width={150}
+                height={150}
                 className="mx-auto rounded-full bg-white p-2"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;

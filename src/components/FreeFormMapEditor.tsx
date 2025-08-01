@@ -20,12 +20,12 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
         position: cell.position || { x: 100 + cell.id * 120, y: 300 }
       }));
     }
-    // デフォルトボード: スタート、ゴール、いくつかの通常マス
+    // きほんのすごろくばん: スタート、ゴール、ふつうのマス
     return [
-      { id: 0, type: 'start', position: { x: 100, y: 300 }, message: 'スタート！' },
-      { id: 1, type: 'normal', position: { x: 250, y: 300 } },
-      { id: 2, type: 'normal', position: { x: 400, y: 300 } },
-      { id: 3, type: 'goal', position: { x: 550, y: 300 }, message: 'ゴール！' }
+      { id: 0, type: 'start', position: { x: 100, y: 300 }, message: 'スタート！がんばろう！' },
+      { id: 1, type: 'normal', position: { x: 250, y: 300 }, message: 'いいかんじだね！' },
+      { id: 2, type: 'normal', position: { x: 400, y: 300 }, message: 'もうすこしだよ！' },
+      { id: 3, type: 'goal', position: { x: 550, y: 300 }, message: 'ゴール！やったね！' }
     ];
   });
 
@@ -37,6 +37,8 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
   const [isFloatingIslandMode, setIsFloatingIslandMode] = useState(false);
   const [availablePokemon, setAvailablePokemon] = useState<Pokemon[]>([]);
   const [showPokemonSelector, setShowPokemonSelector] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showToolPanel, setShowToolPanel] = useState(false);
   
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -48,35 +50,35 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
     description: string;
     canFloat?: boolean;
   }[] = [
-    { type: 'normal', label: '通常', icon: '⚪', color: 'bg-gray-100 hover:bg-gray-200', description: '普通のマス' },
-    { type: 'skip', label: '休み', icon: '😴', color: 'bg-red-100 hover:bg-red-200', description: '指定ターン休み' },
-    { type: 'advance', label: '進む', icon: '⚡', color: 'bg-blue-100 hover:bg-blue-200', description: '指定マス進む' },
-    { type: 'back', label: '戻る', icon: '⬅️', color: 'bg-orange-100 hover:bg-orange-200', description: '指定マス戻る' },
-    { type: 'warp', label: 'ワープ', icon: '🌀', color: 'bg-purple-100 hover:bg-purple-200', description: '指定マスへワープ' },
-    { type: 'floating_island', label: '浮島', icon: '🏝️', color: 'bg-cyan-100 hover:bg-cyan-200', description: '浮島エリア', canFloat: true },
-    { type: 'island_exit', label: '脱出', icon: '🚪', color: 'bg-green-100 hover:bg-green-200', description: '浮島脱出', canFloat: true },
+    { type: 'normal', label: 'ふつうのマス', icon: '⚪', color: 'bg-gray-100 hover:bg-gray-200 border-2 border-gray-300', description: 'なにもおこらない あんぜんなマスだよ' },
+    { type: 'skip', label: 'おやすみマス', icon: '😴', color: 'bg-red-100 hover:bg-red-200 border-2 border-red-300', description: 'とまったら おやすみするよ' },
+    { type: 'advance', label: 'すすむマス', icon: '⚡', color: 'bg-blue-100 hover:bg-blue-200 border-2 border-blue-300', description: 'まえに すすめるよ' },
+    { type: 'back', label: 'もどるマス', icon: '⬅️', color: 'bg-orange-100 hover:bg-orange-200 border-2 border-orange-300', description: 'うしろに もどっちゃうよ' },
+    { type: 'warp', label: 'ワープマス', icon: '🌀', color: 'bg-purple-100 hover:bg-purple-200 border-2 border-purple-300', description: 'べつのマスに とんじゃうよ' },
+    { type: 'floating_island', label: 'うきしま', icon: '🏝️', color: 'bg-cyan-100 hover:bg-cyan-200 border-2 border-cyan-300', description: 'うきしまエリアに いくよ', canFloat: true },
+    { type: 'island_exit', label: 'しまのそと', icon: '🚪', color: 'bg-green-100 hover:bg-green-200 border-2 border-green-300', description: 'うきしまから でるよ', canFloat: true },
   ];
 
   const getCellColor = (cell: Cell): string => {
     switch (cell.type) {
       case 'start':
-        return 'bg-gradient-to-br from-green-400 to-green-600 border-green-700';
+        return 'bg-gradient-to-br from-green-300 via-green-400 to-green-500 border-green-600 shadow-green-300';
       case 'goal':
-        return 'bg-gradient-to-br from-yellow-400 to-yellow-600 border-yellow-700';
+        return 'bg-gradient-to-br from-yellow-300 via-yellow-400 to-amber-500 border-yellow-600 shadow-yellow-300';
       case 'skip':
-        return 'bg-gradient-to-br from-red-400 to-red-600 border-red-700';
+        return 'bg-gradient-to-br from-red-300 via-red-400 to-red-500 border-red-600 shadow-red-300';
       case 'advance':
-        return 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-700';
+        return 'bg-gradient-to-br from-blue-300 via-blue-400 to-blue-500 border-blue-600 shadow-blue-300';
       case 'back':
-        return 'bg-gradient-to-br from-orange-400 to-orange-600 border-orange-700';
+        return 'bg-gradient-to-br from-orange-300 via-orange-400 to-orange-500 border-orange-600 shadow-orange-300';
       case 'warp':
-        return 'bg-gradient-to-br from-purple-400 to-purple-600 border-purple-700';
+        return 'bg-gradient-to-br from-purple-300 via-purple-400 to-purple-500 border-purple-600 shadow-purple-300';
       case 'floating_island':
-        return 'bg-gradient-to-br from-cyan-400 to-cyan-600 border-cyan-700';
+        return 'bg-gradient-to-br from-cyan-300 via-cyan-400 to-teal-500 border-cyan-600 shadow-cyan-300';
       case 'island_exit':
-        return 'bg-gradient-to-br from-emerald-400 to-emerald-600 border-emerald-700';
+        return 'bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-500 border-emerald-600 shadow-emerald-300';
       default:
-        return 'bg-gradient-to-br from-gray-300 to-gray-500 border-gray-600';
+        return 'bg-gradient-to-br from-pink-300 via-pink-400 to-pink-500 border-pink-600 shadow-pink-300';
     }
   };
 
@@ -115,16 +117,25 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
     setNextCellId(prev => prev + 1);
   }, [selectedTool, nextCellId, draggedCell, isFloatingIslandMode]);
 
-  const handleCellMouseDown = useCallback((e: React.MouseEvent, cell: Cell) => {
+  const getEventPosition = (e: React.MouseEvent | React.TouchEvent) => {
+    if ('touches' in e) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    return { x: e.clientX, y: e.clientY };
+  };
+
+  const handleCellMouseDown = useCallback((e: React.MouseEvent | React.TouchEvent, cell: Cell) => {
     e.stopPropagation();
+    e.preventDefault(); // スクロール防止
     
     if (!cell.position) return;
     
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const eventPos = getEventPosition(e);
+    const x = eventPos.x - rect.left;
+    const y = eventPos.y - rect.top;
     
     setDraggedCell(cell);
     setDragOffset({
@@ -133,12 +144,15 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
     });
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     if (!draggedCell || !canvasRef.current) return;
     
+    e.preventDefault(); // スクロール防止
+    
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left - dragOffset.x;
-    const y = e.clientY - rect.top - dragOffset.y;
+    const eventPos = getEventPosition(e);
+    const x = eventPos.x - rect.left - dragOffset.x;
+    const y = eventPos.y - rect.top - dragOffset.y;
     
     setCells(prev => prev.map(cell => 
       cell.id === draggedCell.id 
@@ -178,8 +192,16 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
     }
   };
 
-  // ポケモンデータを読み込み
+  // モバイル検出とポケモンデータを読み込み
   useEffect(() => {
+    // モバイル検出
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
     const loadPokemon = async () => {
       try {
         const pokemon = await PokeApiService.getMultiplePokemon(30);
@@ -190,6 +212,10 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
     };
     
     loadPokemon();
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
   }, []);
 
   const assignPokemonToCell = (cellId: number, pokemon: Pokemon) => {
@@ -232,23 +258,23 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
       {/* ポケモンセレクターモーダル */}
       {showPokemonSelector && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-4xl max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-2xl font-bold text-gray-800">🎮 ポケモンを選択</h3>
+          <div className="bg-gradient-to-br from-yellow-100 to-orange-100 rounded-3xl p-8 max-w-4xl max-h-[80vh] overflow-y-auto border-4 border-yellow-300 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-3xl font-bold text-orange-800">🎮 すきなポケモンをえらぼう！</h3>
               <button
                 onClick={() => setShowPokemonSelector(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-red-500 hover:text-red-700 text-3xl font-bold bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:shadow-xl transition-all"
               >
                 ×
               </button>
             </div>
             
             {availablePokemon.length > 0 ? (
-              <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+              <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
                 {availablePokemon.map((pokemon) => (
                   <div
                     key={pokemon.id}
-                    className="flex flex-col items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all"
+                    className="flex flex-col items-center p-4 bg-white border-3 border-blue-200 rounded-2xl cursor-pointer hover:border-yellow-400 hover:bg-yellow-50 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
                     onClick={() => {
                       if (selectedCell) {
                         assignPokemonToCell(selectedCell.id, pokemon);
@@ -259,238 +285,340 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
                     <Image
                       src={PokeApiService.getPokemonImageUrl(pokemon, 'sprite')}
                       alt={pokemon.name}
-                      width={48}
-                      height={48}
+                      width={64}
+                      height={64}
                       className="mb-2"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = '/placeholder-pokemon.svg';
                       }}
                     />
-                    <div className="text-xs text-center font-medium text-gray-700">
+                    <div className="text-sm text-center font-bold text-blue-800 bg-blue-100 px-2 py-1 rounded-full">
                       {pokemon.name}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                ポケモンを読み込み中...
+              <div className="text-center py-12 text-orange-600 text-xl font-bold">
+                <div className="animate-spin text-4xl mb-4">🌟</div>
+                ポケモンたちが やってくるよ...
               </div>
             )}
           </div>
         </div>
       )}
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-4">
-      <div className="max-w-7xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden">
-        {/* ヘッダー */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4">
-          <h1 className="text-3xl font-bold text-center">🎨 自由配置マップエディター</h1>
-          <p className="text-center mt-2 opacity-90">マスをクリックして配置、ドラッグして移動！</p>
-        </div>
-
-        <div className="flex h-[calc(100vh-200px)]">
-          {/* ツールパレット */}
-          <div className="w-80 bg-gray-50 p-4 overflow-y-auto border-r">
-            <div className="space-y-4">
-              {/* モード切替 */}
-              <div className="bg-white rounded-lg p-4 shadow-sm">
-                <h3 className="font-bold mb-3 text-gray-800">配置モード</h3>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={isFloatingIslandMode}
-                    onChange={(e) => setIsFloatingIslandMode(e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">浮島エリアモード 🏝️</span>
-                </label>
-              </div>
-
-              {/* ツール選択 */}
-              <div className="bg-white rounded-lg p-4 shadow-sm">
-                <h3 className="font-bold mb-3 text-gray-800">マスの種類</h3>
-                <div className="grid grid-cols-1 gap-2">
-                  {cellTypeTools.map((tool) => (
-                    <button
-                      key={tool.type}
-                      onClick={() => setSelectedTool(tool.type)}
-                      className={`
-                        p-3 rounded-lg border-2 transition-all text-left
-                        ${selectedTool === tool.type 
-                          ? 'border-purple-500 bg-purple-100' 
-                          : 'border-gray-300 hover:border-gray-400'
-                        }
-                        ${tool.color}
-                      `}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xl">{tool.icon}</span>
-                        <div>
-                          <div className="font-semibold">{tool.label}</div>
-                          <div className="text-xs text-gray-600">{tool.description}</div>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 選択中のマス設定 */}
-              {selectedCell && (
-                <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <h3 className="font-bold mb-3 text-gray-800">マス設定</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        マス番号: {selectedCell.id}
-                      </label>
-                    </div>
-                    
-                    {(selectedCell.type === 'skip' || selectedCell.type === 'advance' || selectedCell.type === 'back') && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          値
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={selectedCell.value || 1}
-                          onChange={(e) => updateSelectedCell({ value: parseInt(e.target.value) })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        />
-                      </div>
-                    )}
-                    
-                    {selectedCell.type === 'warp' && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          ワープ先
-                        </label>
-                        <select
-                          value={selectedCell.warpTo || ''}
-                          onChange={(e) => updateSelectedCell({ warpTo: parseInt(e.target.value) })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        >
-                          <option value="">選択してください</option>
-                          {cells.filter(c => c.id !== selectedCell.id).map(cell => (
-                            <option key={cell.id} value={cell.id}>
-                              マス{cell.id} ({getCellIcon(cell)})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-
-                    {selectedCell.type === 'island_exit' && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          戻り先（メインルート）
-                        </label>
-                        <select
-                          value={selectedCell.returnTo || ''}
-                          onChange={(e) => updateSelectedCell({ returnTo: parseInt(e.target.value) })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        >
-                          <option value="">選択してください</option>
-                          {cells.filter(c => c.id !== selectedCell.id && !c.isFloatingIsland).map(cell => (
-                            <option key={cell.id} value={cell.id}>
-                              マス{cell.id} ({getCellIcon(cell)})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    
-                    {/* ポケモン設定 */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        🎮 ポケモン配置
-                      </label>
-                      {selectedCell.pokemon ? (
-                        <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                          <Image
-                            src={PokeApiService.getPokemonImageUrl(selectedCell.pokemon, 'sprite')}
-                            alt={selectedCell.pokemon.name}
-                            width={40}
-                            height={40}
-                            className="rounded-full bg-white p-1"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/placeholder-pokemon.svg';
-                            }}
-                          />
-                          <div className="flex-1">
-                            <div className="font-semibold text-blue-800">{selectedCell.pokemon.name}</div>
-                            <button
-                              onClick={() => removePokemonFromCell(selectedCell.id)}
-                              className="text-xs text-red-600 hover:text-red-800"
-                            >
-                              削除
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setShowPokemonSelector(true)}
-                          className="w-full py-2 px-4 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-                        >
-                          + ポケモンを選択
-                        </button>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        メッセージ
-                      </label>
-                      <input
-                        type="text"
-                        value={selectedCell.message || ''}
-                        onChange={(e) => updateSelectedCell({ message: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        placeholder="子供向けメッセージ"
-                      />
-                    </div>
-                    
-                    <button
-                      onClick={() => deleteCell(selectedCell.id)}
-                      className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                      disabled={selectedCell.type === 'start' || selectedCell.type === 'goal'}
-                    >
-                      このマスを削除
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* アクション */}
-              <div className="space-y-2">
+      <div className="min-h-screen bg-gradient-to-br from-cyan-300 via-blue-400 to-purple-500">
+        {/* モバイル用ヘッダー */}
+        {isMobile && (
+          <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white p-4 sticky top-0 z-30 shadow-lg">
+            <div className="flex justify-between items-center">
+              <h1 className="text-xl font-bold">🎨 すごろくをつくろう！</h1>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowToolPanel(!showToolPanel)}
+                  className="px-4 py-2 bg-white bg-opacity-20 rounded-xl font-bold text-lg shadow-lg"
+                >
+                  {showToolPanel ? '✕' : '🛠️ どうぐ'}
+                </button>
                 <button
                   onClick={handleSave}
-                  className="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-bold"
+                  className="px-4 py-2 bg-green-400 rounded-xl font-bold text-lg shadow-lg hover:bg-green-300"
                 >
-                  💾 マップを保存
+                  💾 ほぞん
                 </button>
                 <button
                   onClick={onCancel}
-                  className="w-full px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                  className="px-4 py-2 bg-red-400 rounded-xl font-bold text-lg shadow-lg hover:bg-red-300"
                 >
-                  キャンセル
+                  ✕ やめる
                 </button>
               </div>
             </div>
           </div>
+        )}
+
+        {/* デスクトップ用ヘッダー */}
+        {!isMobile && (
+          <div className="max-w-7xl mx-auto bg-white rounded-t-3xl shadow-2xl p-6">
+            <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white p-6 rounded-3xl shadow-lg">
+              <h1 className="text-5xl font-bold text-center mb-2">🎨 すごろくをつくろう！</h1>
+              <p className="text-center text-xl opacity-90">マスをタッチして おいたり うごかしたり しよう！</p>
+            </div>
+          </div>
+        )}
+
+        <div className={`${isMobile ? 'relative' : 'max-w-7xl mx-auto bg-white rounded-b-3xl shadow-xl flex'} ${isMobile ? '' : 'h-[calc(100vh-200px)]'}`}>
+          {/* モバイル用ツールパネル */}
+          {isMobile && showToolPanel && (
+            <div className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-yellow-100 to-orange-100 border-t-4 border-yellow-300 p-6 z-40 max-h-[60vh] overflow-y-auto shadow-2xl">
+              <div className="space-y-6">
+                {/* モード切替 */}
+                <div className="bg-white rounded-2xl p-4 border-3 border-cyan-300 shadow-lg">
+                  <h3 className="font-bold mb-3 text-cyan-800 text-lg">🏝️ とくべつモード</h3>
+                  <label className="flex items-center space-x-3 bg-cyan-50 p-3 rounded-xl">
+                    <input
+                      type="checkbox"
+                      checked={isFloatingIslandMode}
+                      onChange={(e) => setIsFloatingIslandMode(e.target.checked)}
+                      className="w-6 h-6 text-cyan-500"
+                    />
+                    <span className="text-lg font-bold text-cyan-700">うきしまモード 🏝️</span>
+                  </label>
+                  <p className="text-sm text-cyan-600 mt-2">うきしまのマスを つくるよ！</p>
+                </div>
+
+                {/* ツール選択 */}
+                <div className="bg-white rounded-2xl p-4 border-3 border-blue-300 shadow-lg">
+                  <h3 className="font-bold mb-3 text-blue-800 text-lg">🎯 マスのしゅるい</h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    {cellTypeTools.map((tool) => (
+                      <button
+                        key={tool.type}
+                        onClick={() => setSelectedTool(tool.type)}
+                        className={`
+                          p-4 rounded-xl border-3 transition-all text-left shadow-lg
+                          ${selectedTool === tool.type 
+                            ? 'border-yellow-400 bg-yellow-100 transform scale-105' 
+                            : 'border-gray-300 hover:border-gray-400 hover:transform hover:scale-102'
+                          }
+                          ${tool.color}
+                        `}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <span className="text-2xl">{tool.icon}</span>
+                          <div>
+                            <div className="font-bold text-lg text-gray-800">{tool.label}</div>
+                            <div className="text-sm text-gray-600">{tool.description}</div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* デスクトップ用ツールパレット */}
+          {!isMobile && (
+            <div className="w-96 bg-gradient-to-b from-yellow-100 to-orange-100 p-6 overflow-y-auto border-r-4 border-yellow-300">
+              <div className="space-y-6">
+                {/* モード切替 */}
+                <div className="bg-white rounded-2xl p-5 shadow-xl border-3 border-cyan-300">
+                  <h3 className="font-bold mb-4 text-cyan-800 text-xl">🏝️ とくべつモード</h3>
+                  <label className="flex items-center space-x-4 bg-cyan-50 p-4 rounded-xl cursor-pointer hover:bg-cyan-100 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={isFloatingIslandMode}
+                      onChange={(e) => setIsFloatingIslandMode(e.target.checked)}
+                      className="w-6 h-6 text-cyan-500"
+                    />
+                    <div>
+                      <span className="text-lg font-bold text-cyan-700">うきしまモード 🏝️</span>
+                      <p className="text-sm text-cyan-600">うきしまのマスを つくるよ！</p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* ツール選択 */}
+                <div className="bg-white rounded-2xl p-5 shadow-xl border-3 border-blue-300">
+                  <h3 className="font-bold mb-4 text-blue-800 text-xl">🎯 マスのしゅるい</h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    {cellTypeTools.map((tool) => (
+                      <button
+                        key={tool.type}
+                        onClick={() => setSelectedTool(tool.type)}
+                        className={`
+                          p-4 rounded-xl border-3 transition-all text-left shadow-lg hover:shadow-xl
+                          ${selectedTool === tool.type 
+                            ? 'border-yellow-400 bg-yellow-100 transform scale-105' 
+                            : 'border-gray-300 hover:border-gray-400 hover:transform hover:scale-102'
+                          }
+                          ${tool.color}
+                        `}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <span className="text-2xl">{tool.icon}</span>
+                          <div>
+                            <div className="font-bold text-lg text-gray-800">{tool.label}</div>
+                            <div className="text-sm text-gray-600">{tool.description}</div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 選択中のマス設定 */}
+                {selectedCell && (
+                  <div className="bg-white rounded-2xl p-5 shadow-xl border-3 border-green-300">
+                    <h3 className="font-bold mb-4 text-green-800 text-xl">⚙️ マスのせってい</h3>
+                    <div className="space-y-4">
+                      <div className="bg-green-50 p-3 rounded-xl">
+                        <label className="block text-lg font-bold text-green-700 mb-1">
+                          📍 マスばんごう: {selectedCell.id}
+                        </label>
+                        <p className="text-sm text-green-600">このマスは {getCellIcon(selectedCell)} {cellTypeTools.find(t => t.type === selectedCell.type)?.label} だよ！</p>
+                      </div>
+                      
+                      {(selectedCell.type === 'skip' || selectedCell.type === 'advance' || selectedCell.type === 'back') && (
+                        <div className="bg-yellow-50 p-4 rounded-xl border-2 border-yellow-300">
+                          <label className="block text-lg font-bold text-yellow-700 mb-2">
+                            🔢 すうじをきめよう
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={selectedCell.value || 1}
+                            onChange={(e) => updateSelectedCell({ value: parseInt(e.target.value) })}
+                            className="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-xl font-bold text-center"
+                          />
+                          <p className="text-sm text-yellow-600 mt-2">
+                            {selectedCell.type === 'skip' && '何回おやすみするか'}
+                            {selectedCell.type === 'advance' && '何マスすすむか'}
+                            {selectedCell.type === 'back' && '何マスもどるか'}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {selectedCell.type === 'warp' && (
+                        <div className="bg-purple-50 p-4 rounded-xl border-2 border-purple-300">
+                          <label className="block text-lg font-bold text-purple-700 mb-2">
+                            🌀 どこにワープする？
+                          </label>
+                          <select
+                            value={selectedCell.warpTo || ''}
+                            onChange={(e) => updateSelectedCell({ warpTo: parseInt(e.target.value) })}
+                            className="w-full px-4 py-3 border-2 border-purple-300 rounded-xl text-lg font-bold"
+                          >
+                            <option value="">えらんでね！</option>
+                            {cells.filter(c => c.id !== selectedCell.id).map(cell => (
+                              <option key={cell.id} value={cell.id}>
+                                {cell.id}ばんのマス {getCellIcon(cell)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {selectedCell.type === 'island_exit' && (
+                        <div className="bg-emerald-50 p-4 rounded-xl border-2 border-emerald-300">
+                          <label className="block text-lg font-bold text-emerald-700 mb-2">
+                            🚪 うきしまから どこにもどる？
+                          </label>
+                          <select
+                            value={selectedCell.returnTo || ''}
+                            onChange={(e) => updateSelectedCell({ returnTo: parseInt(e.target.value) })}
+                            className="w-full px-4 py-3 border-2 border-emerald-300 rounded-xl text-lg font-bold"
+                          >
+                            <option value="">えらんでね！</option>
+                            {cells.filter(c => c.id !== selectedCell.id && !c.isFloatingIsland).map(cell => (
+                              <option key={cell.id} value={cell.id}>
+                                {cell.id}ばんのマス {getCellIcon(cell)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      
+                      {/* ポケモン設定 */}
+                      <div className="bg-blue-50 p-4 rounded-xl border-2 border-blue-300">
+                        <label className="block text-lg font-bold text-blue-700 mb-3">
+                          🎮 ポケモンをおこう！
+                        </label>
+                        {selectedCell.pokemon ? (
+                          <div className="flex items-center space-x-4 p-4 bg-white rounded-xl border-2 border-blue-300 shadow-lg">
+                            <Image
+                              src={PokeApiService.getPokemonImageUrl(selectedCell.pokemon, 'sprite')}
+                              alt={selectedCell.pokemon.name}
+                              width={60}
+                              height={60}
+                              className="rounded-full bg-yellow-100 p-2 shadow-lg"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/placeholder-pokemon.svg';
+                              }}
+                            />
+                            <div className="flex-1">
+                              <div className="font-bold text-xl text-blue-800 mb-2">{selectedCell.pokemon.name}</div>
+                              <button
+                                onClick={() => removePokemonFromCell(selectedCell.id)}
+                                className="px-3 py-1 text-sm bg-red-500 text-white rounded-full hover:bg-red-600 font-bold"
+                              >
+                                🗑️ けす
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setShowPokemonSelector(true)}
+                            className="w-full py-4 px-6 border-3 border-dashed border-blue-400 rounded-xl text-blue-700 hover:bg-blue-50 transition-all font-bold text-lg shadow-lg hover:shadow-xl"
+                          >
+                            ✨ ポケモンをえらぼう！
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="bg-pink-50 p-4 rounded-xl border-2 border-pink-300">
+                        <label className="block text-lg font-bold text-pink-700 mb-2">
+                          💬 メッセージをかこう！
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedCell.message || ''}
+                          onChange={(e) => updateSelectedCell({ message: e.target.value })}
+                          className="w-full px-4 py-3 border-2 border-pink-300 rounded-xl text-lg font-bold"
+                          placeholder="たのしいメッセージをかいてね！"
+                        />
+                        <p className="text-sm text-pink-600 mt-2">みんなが よろこぶメッセージを かいてみよう！</p>
+                      </div>
+                      
+                      <button
+                        onClick={() => deleteCell(selectedCell.id)}
+                        className="w-full px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={selectedCell.type === 'start' || selectedCell.type === 'goal'}
+                      >
+                        🗑️ このマスをけす
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* アクション */}
+                <div className="space-y-4">
+                  <button
+                    onClick={handleSave}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-green-400 to-green-600 text-white rounded-2xl hover:from-green-500 hover:to-green-700 font-bold text-xl shadow-xl transform hover:scale-105 transition-all"
+                  >
+                    💾 すごろくをほぞん！
+                  </button>
+                  <button
+                    onClick={onCancel}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-gray-400 to-gray-600 text-white rounded-2xl hover:from-gray-500 hover:to-gray-700 font-bold text-xl shadow-xl transform hover:scale-105 transition-all"
+                  >
+                    ✕ やめる
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* キャンバス */}
-          <div className="flex-1 relative overflow-hidden">
+          <div className={`${isMobile ? 'w-full h-screen' : 'flex-1'} relative overflow-hidden`}>
             <div
               ref={canvasRef}
-              className="w-full h-full bg-gradient-to-br from-green-50 to-blue-50 relative cursor-crosshair"
+              className={`w-full ${isMobile ? 'h-full' : 'h-full'} bg-gradient-to-br from-green-50 to-blue-50 relative cursor-crosshair`}
+              style={{ 
+                touchAction: 'none', // スクロール完全無効化
+                minHeight: isMobile ? '100vh' : 'auto'
+              }}
               onClick={handleCanvasClick}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
+              onTouchMove={handleMouseMove}
+              onTouchEnd={handleMouseUp}
             >
               {/* グリッド背景 */}
               <div 
@@ -521,26 +649,27 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
                   <div
                     key={cell.id}
                     className={`
-                      absolute w-16 h-16 border-3 rounded-xl shadow-lg cursor-pointer
-                      flex flex-col items-center justify-center text-white font-bold text-xs
-                      transition-all duration-200 hover:scale-110 hover:shadow-xl
+                      absolute ${isMobile ? 'w-24 h-24' : 'w-20 h-20'} border-4 rounded-2xl shadow-2xl cursor-pointer
+                      flex flex-col items-center justify-center text-white font-black ${isMobile ? 'text-lg' : 'text-base'}
+                      transition-all duration-300 hover:scale-125 hover:shadow-3xl hover:rotate-3
                       ${getCellColor(cell)}
-                      ${selectedCell?.id === cell.id ? 'ring-4 ring-yellow-400' : ''}
-                      ${cell.isFloatingIsland ? 'ring-2 ring-cyan-400' : ''}
+                      ${selectedCell?.id === cell.id ? 'ring-6 ring-yellow-300 ring-opacity-80 animate-pulse' : ''}
+                      ${cell.isFloatingIsland ? 'ring-4 ring-cyan-300 ring-opacity-60' : ''}
                     `}
                     style={{
-                      left: `${cell.position.x - 32}px`,
-                      top: `${cell.position.y - 32}px`,
+                      left: `${cell.position.x - (isMobile ? 48 : 40)}px`,
+                      top: `${cell.position.y - (isMobile ? 48 : 40)}px`,
                       zIndex: draggedCell?.id === cell.id ? 1000 : 1
                     }}
                     onMouseDown={(e) => handleCellMouseDown(e, cell)}
+                    onTouchStart={(e) => handleCellMouseDown(e, cell)}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCellClick(cell);
                     }}
                   >
-                    <div className="text-lg leading-none">{getCellIcon(cell)}</div>
-                    <div className="text-[8px] leading-none mt-1">{cell.id}</div>
+                    <div className="text-2xl leading-none drop-shadow-lg">{getCellIcon(cell)}</div>
+                    <div className="text-xs leading-none mt-1 bg-black bg-opacity-40 px-2 py-0.5 rounded-full">{cell.id}</div>
                     
                     {/* ポケモン画像 */}
                     {cell.pokemon && (
@@ -609,17 +738,28 @@ export function FreeFormMapEditor({ onSave, onCancel, initialBoard }: FreeFormMa
               </svg>
 
               {/* 操作説明 */}
-              <div className="absolute bottom-4 right-4 bg-white bg-opacity-90 rounded-lg p-3 text-sm">
-                <div className="font-bold mb-1">操作方法:</div>
-                <div>• クリック: マス配置</div>
-                <div>• ドラッグ: マス移動</div>
-                <div>• マスクリック: 設定変更</div>
-              </div>
+              {!isMobile && (
+                <div className="absolute bottom-6 right-6 bg-gradient-to-br from-yellow-100 to-orange-100 border-3 border-yellow-400 rounded-2xl p-5 shadow-2xl">
+                  <div className="font-bold mb-3 text-orange-800 text-lg">🎯 つかいかた:</div>
+                  <div className="space-y-2 text-orange-700 font-bold">
+                    <div>• タッチ: マスをおく</div>
+                    <div>• ひっぱる: マスをうごかす</div>
+                    <div>• マスをタッチ: せっていをかえる</div>
+                  </div>
+                </div>
+              )}
+              
+              {/* モバイル用操作ヒント */}
+              {isMobile && !showToolPanel && (
+                <div className="absolute top-6 left-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl p-4 shadow-xl border-2 border-white">
+                  <div className="font-bold text-lg">🛠️ どうぐボタンで</div>
+                  <div className="font-bold text-lg">ツールをひょうじ！</div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-    </div>
     </>
   );
 }
