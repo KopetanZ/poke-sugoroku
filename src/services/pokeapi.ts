@@ -29,10 +29,17 @@ export class PokeApiService {
   }
 
   static getPokemonImageUrl(pokemon: Pokemon, type: 'artwork' | 'sprite' = 'artwork'): string {
-    if (type === 'artwork') {
-      return pokemon.sprites.other['official-artwork'].front_default;
+    try {
+      if (type === 'artwork') {
+        return pokemon.sprites?.other?.['official-artwork']?.front_default || 
+               pokemon.sprites?.front_default || 
+               '/placeholder-pokemon.svg';
+      }
+      return pokemon.sprites?.front_default || '/placeholder-pokemon.svg';
+    } catch (error) {
+      console.warn('Failed to get Pokemon image URL:', error);
+      return '/placeholder-pokemon.svg';
     }
-    return pokemon.sprites.front_default;
   }
 
   static getPokemonCryUrl(pokemon: Pokemon): string | null {

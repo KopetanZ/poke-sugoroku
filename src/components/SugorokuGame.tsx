@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react';
 import { GameState, Player, Cell } from '@/types/game';
 import { GameEngine } from '@/services/gameEngine';
 import { GameBoard } from './GameBoard';
+import { CurvedGameBoard } from './CurvedGameBoard';
 import { MapEditor } from './MapEditor';
+import { ImprovedMapEditor } from './ImprovedMapEditor';
 import { PokemonSelector } from './PokemonSelector';
 import { AchievementNotification } from './AchievementNotification';
 import { AchievementPanel } from './AchievementPanel';
 import { DifficultySelector } from './DifficultySelector';
+import { DiceRoll } from './DiceRoll';
 import { PokeApiService } from '@/services/pokeapi';
 import { SoundService } from '@/services/soundService';
 import { AchievementService } from '@/services/achievementService';
@@ -39,6 +42,12 @@ export function SugorokuGame() {
     diceMax: 6,
     boardSize: 30,
     specialCellFrequency: 0.25
+  });
+  const [useCurvedBoard] = useState(true);
+  const [useImprovedEditor] = useState(true);
+  const [diceRollState, setDiceRollState] = useState({
+    isRolling: false,
+    finalValue: undefined as number | undefined
   });
 
   const startNewGame = async () => {
@@ -191,10 +200,16 @@ export function SugorokuGame() {
     // サイコロ音を再生
     SoundService.playDiceRoll();
     
-    // サイコロを振るアニメーション
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // 3Dサイコロアニメーションを開始
+    setDiceRollState({ isRolling: true, finalValue: undefined });
+    
+    // サイコロアニメーション完了を待つ
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     const diceValue = GameEngine.rollDice(gameSettings.diceMin || 1, gameSettings.diceMax || 6);
+    
+    // サイコロの最終値を設定
+    setDiceRollState({ isRolling: false, finalValue: diceValue });
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     const oldPosition = currentPlayer.position;
     const newGameState = await GameEngine.makeMove(gameState, diceValue);
@@ -312,7 +327,13 @@ export function SugorokuGame() {
   }
 
   if (editMode) {
-    return (
+    return useImprovedEditor ? (
+      <ImprovedMapEditor
+        onSave={saveCustomBoard}
+        onCancel={cancelMapEditor}
+        initialBoard={customBoard || undefined}
+      />
+    ) : (
       <MapEditor
         onSave={saveCustomBoard}
         onCancel={cancelMapEditor}
@@ -361,6 +382,10 @@ export function SugorokuGame() {
                           width={48}
                           height={48}
                           className="rounded-full bg-white p-1 border-2 border-gray-300"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/placeholder-pokemon.svg';
+                          }}
                         />
                       ) : (
                         <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
@@ -491,7 +516,11 @@ export function SugorokuGame() {
 
       {/* ゲーム盤面 */}
       <div className="bg-white rounded-2xl shadow-lg p-4 mb-4">
-        <GameBoard gameState={gameState} />
+        {useCurvedBoard ? (
+          <CurvedGameBoard gameState={gameState} />
+        ) : (
+          <GameBoard gameState={gameState} />
+        )}
       </div>
 
       {/* プレイヤー情報とコントロール */}
@@ -508,6 +537,10 @@ export function SugorokuGame() {
                   width={60}
                   height={60}
                   className="rounded-full bg-white p-1"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/placeholder-pokemon.svg';
+                  }}
                 />
               )}
               <div>
@@ -524,14 +557,12 @@ export function SugorokuGame() {
 
           {/* サイコロとメッセージ */}
           <div className="space-y-4">
-            {gameState.diceValue && (
-              <div className="text-center">
-                <div className="text-6xl animate-pulse">🎲</div>
-                <div className="text-2xl font-bold text-purple-800">
-                  {gameState.diceValue}
-                </div>
-              </div>
-            )}
+            <div className="text-center">
+              <DiceRoll 
+                isRolling={diceRollState.isRolling}
+                finalValue={diceRollState.finalValue}
+              />
+            </div>
             
             <button
               onClick={rollDice}
@@ -572,6 +603,10 @@ export function SugorokuGame() {
                       width={40}
                       height={40}
                       className="mx-auto mb-2"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/placeholder-pokemon.svg';
+                      }}
                     />
                   )}
                   <div className="font-semibold text-gray-800">{player.name}</div>
@@ -601,6 +636,10 @@ export function SugorokuGame() {
                 width={100}
                 height={100}
                 className="mx-auto rounded-full bg-white p-2"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/placeholder-pokemon.svg';
+                }}
               />
             )}
           </div>
